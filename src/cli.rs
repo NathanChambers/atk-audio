@@ -1,4 +1,5 @@
 mod engine;
+mod help;
 mod recording;
 #[cfg(windows)]
 mod loopback;
@@ -107,7 +108,17 @@ fn run() -> Result<()> {
     };
 
     let commands = match input {
-        Value::Array(commands) if !options.batch || (1..=1024).contains(&commands.len()) => commands,
+        Value::Array(commands) => {
+            if !(1..=1024).contains(&commands.len()) {
+                return Err("Batch input must be a JSON array of 1..1024 commands".into());
+            }
+            for (index, command) in commands.iter().enumerate() {
+                if !command["command"].as_str().is_some_and(|name| !name.is_empty()) {
+                    return Err(format!("Command {}: expected a JSON object with a nonempty command string", index + 1).into());
+                }
+            }
+            commands
+        }
         _ if options.batch => return Err("Batch input must be a JSON array of 1..1024 commands".into()),
         command => vec![command],
     };
@@ -171,15 +182,19 @@ fn parse_options() -> Result<Options> {
                     .into_string()
                     .map_err(|_| "Invalid session ID")?
             }
-            "--file" | "--input" | "-i" => options.file = Some(PathBuf::from(next_value()?)),
-            "--command" => {
+            "--file" | "--input" | "-i" if options.file.is_none() && options.command.is_none() => {
+                options.file = Some(PathBuf::from(next_value()?));
+            }
+            "--command" if options.command.is_none() && options.file.is_none() => {
                 options.command = Some(
                     next_value()?
                         .into_string()
                         .map_err(|_| "Expected a UTF-8 JSON command")?,
                 )
             }
-            "--output" => options.output = Some(PathBuf::from(next_value()?)),
+            "--output" | "-o" if options.output.is_none() => {
+                options.output = Some(PathBuf::from(next_value()?));
+            }
             "--port" => {
                 options.port = Some(
                     next_value()?
@@ -238,7 +253,7 @@ fn execute(
 
     let session = &options.session;
     let result = match command["command"].as_str() {
-        Some("help") => command_help(),
+        Some("help") => help::execute(command, command_help())?,
         Some("project_list") => project.list()?,
         Some("session_inspect") => project.document("sessions", session)?,
         Some("asset_inspect") => {
