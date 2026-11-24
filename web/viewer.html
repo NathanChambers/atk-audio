@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#171a20">
+    <title>Audio Workbench</title>
+    <link rel="icon" href="data:,">
+    <link rel="stylesheet" href="/viewer.css">
+</head>
+<body>
+    <header>
+        <div class="workspace">
+            <button id="workspace-open" type="button" aria-label="Switch workspace" aria-haspopup="dialog" aria-controls="workspace-picker" aria-keyshortcuts="Control+p" title="Switch workspace (Ctrl+P)">
+                <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M3 7V5h6l2 2h10v12H3Z"/></svg>
+            </button>
+            <div class="workspace-info">
+                <span id="workspace-path">Loading workspace…</span>
+                <div class="connection" role="status"><span id="connection-dot"></span><span id="connection">Connecting</span></div>
+            </div>
+        </div>
+        <button id="tune-open" type="button" aria-label="Record audio" aria-haspopup="dialog" aria-controls="tune-dialog" title="Record audio">
+            <svg aria-hidden="true" viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="12" rx="3"/><path d="M5 11v1a7 7 0 0 0 14 0v-1M12 19v3m-3 0h6"/></svg>
+        </button>
+    </header>
+    <dialog id="tune-dialog" aria-labelledby="tune-title">
+        <div class="tune-heading">
+            <h2 id="tune-title">Record audio</h2>
+            <form method="dialog">
+                <button class="tune-close" type="submit" aria-label="Close recording dialog" title="Close">
+                    <svg aria-hidden="true" viewBox="0 0 24 24"><path d="m6 6 12 12M18 6 6 18"/></svg>
+                </button>
+            </form>
+        </div>
+        <div class="tune-field">
+            <label for="tune-source">Source</label>
+            <select id="tune-source" aria-describedby="tune-help" autofocus>
+                <option value="microphone">Microphone</option>
+                <option value="system">System audio</option>
+            </select>
+        </div>
+        <div class="tune-field" id="tune-microphone">
+            <label for="tune-input">Input device</label>
+            <select id="tune-input"><option value="">System default</option></select>
+        </div>
+        <p id="tune-help">Record up to 30 seconds.</p>
+        <button id="tune-record" type="button">Start recording</button>
+        <p id="tune-status" role="status"></p>
+        <div id="tune-download" hidden>
+            <audio id="tune-preview" controls aria-label="Recording preview"></audio>
+            <a download="sung-tune.wav">Download WAV</a>
+        </div>
+    </dialog>
+    <dialog id="workspace-picker" aria-label="Switch workspace">
+        <input id="workspace-search" type="text" role="combobox" aria-label="Search workspaces" aria-controls="workspace-results" aria-expanded="true" autocomplete="off" spellcheck="false" placeholder="Search assets and sessions…" autofocus>
+        <div id="workspace-results" role="listbox" aria-label="Audio workspaces"></div>
+        <p id="workspace-empty" role="status" hidden>No matching workspaces.</p>
+    </dialog>
+    <dialog id="playback-picker" aria-label="Choose playback">
+        <input id="playback-search" type="text" role="combobox" aria-label="Search playback options" aria-controls="playback-results" aria-expanded="true" autocomplete="off" spellcheck="false" placeholder="Search arrangement and presets…" autofocus>
+        <div id="playback-results" role="listbox" aria-label="Playback options"></div>
+        <p id="playback-empty" role="status" hidden>No matching playback options.</p>
+    </dialog>
+    <main>
+        <p id="status" role="status"></p>
+        <section id="editor" aria-label="Track arrangement" hidden>
+            <div id="timeline">
+                <div class="timeline-header">
+                    <button id="reset-track-monitor" type="button" disabled>Reset Mute/Solo</button>
+                    <div class="ruler"></div>
+                </div>
+                <div id="track-rows"></div>
+            </div>
+        </section>
+    </main>
+    <footer id="footer" hidden>
+        <details id="clip-panel" class="panel">
+            <summary>Clip details</summary>
+            <div id="details" class="popover">Select a clip on the timeline.</div>
+        </details>
+        <div class="transport panel" role="group" aria-label="Playback">
+            <div class="playback-selector">
+                <button id="playback-open" type="button" aria-label="Choose playback" aria-haspopup="dialog" aria-controls="playback-picker" title="Choose playback">
+                    <svg aria-hidden="true" viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="5.5"/><path d="m15 15 4 4"/></svg>
+                </button>
+                <span id="playback-name">Arrangement</span>
+            </div>
+            <button id="play" type="button">Play</button>
+            <button id="stop" type="button" disabled>Stop</button>
+            <span id="playback-time" aria-label="Elapsed playback time">0.00 s</span>
+            <label><input id="loop" type="checkbox"> Loop</label>
+        </div>
+        <details id="control-panel" class="panel" hidden>
+            <summary>Controls</summary>
+            <div id="controls" class="popover"></div>
+        </details>
+    </footer>
+    <script type="module" src="/viewer.mjs"></script>
+</body>
+</html>

@@ -1,0 +1,19 @@
+[package]
+name = "audio-workshop"
+version = "0.1.0"
+edition = "2024"
+autobins = false
+description = "Local audio editing CLI and browser viewer"
+readme = "README.md"
+license = "MIT"
+
+[dependencies]
+serde_json = { version = "1", features = ["float_roundtrip"] }
+
+[[bin]]
+name = "atk-audio-cli"
+path = "src/cli.rs"
+
+[[bin]]
+name = "atk-audio"
+path = "src/server.rs"

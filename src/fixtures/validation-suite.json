@@ -1,0 +1,908 @@
+[
+  {
+    "command": "session_start",
+    "asset": "audio-validation-suite",
+    "name": "Audio Validation Suite"
+  },
+  {
+    "command": "track_add",
+    "id": "sine",
+    "name": "Tonal · Sine wave"
+  },
+  {
+    "command": "source_generate",
+    "id": "sine-reference",
+    "seconds": 1,
+    "wave": "additive",
+    "attack": 0,
+    "release": 0,
+    "gain": 0.5,
+    "partials": [
+      {
+        "frequency": 440,
+        "phaseDegrees": 90
+      }
+    ]
+  },
+  {
+    "command": "clip_add",
+    "id": "sine-reference-1",
+    "track": "sine",
+    "source": "sine-reference",
+    "start": 0,
+    "pan": 0,
+    "name": "reference"
+  },
+  {
+    "command": "track_add",
+    "id": "bell",
+    "name": "Tonal · Bell"
+  },
+  {
+    "command": "source_generate",
+    "id": "bell-modes",
+    "seconds": 3,
+    "wave": "additive",
+    "attack": 0.002,
+    "partials": [
+      {
+        "frequency": 392,
+        "gain": 0.32,
+        "decay": 1.15
+      },
+      {
+        "frequency": 728,
+        "gain": 0.25,
+        "decay": 0.72
+      },
+      {
+        "frequency": 1086,
+        "gain": 0.18,
+        "decay": 0.47
+      },
+      {
+        "frequency": 1832,
+        "gain": 0.14,
+        "decay": 0.25
+      },
+      {
+        "frequency": 2625,
+        "gain": 0.08,
+        "decay": 0.15
+      }
+    ]
+  },
+  {
+    "command": "clip_add",
+    "id": "bell-modes-1",
+    "track": "bell",
+    "source": "bell-modes",
+    "start": 2,
+    "pan": 0,
+    "name": "modes"
+  },
+  {
+    "command": "track_add",
+    "id": "plucked-string",
+    "name": "Tonal · Plucked string"
+  },
+  {
+    "command": "source_generate",
+    "id": "plucked-string-harmonics",
+    "seconds": 2.5,
+    "wave": "additive",
+    "attack": 0.001,
+    "partials": [
+      {
+        "frequency": 196,
+        "gain": 0.42,
+        "decay": 0.9
+      },
+      {
+        "frequency": 392,
+        "gain": 0.21,
+        "decay": 0.47
+      },
+      {
+        "frequency": 588,
+        "gain": 0.14,
+        "decay": 0.31
+      },
+      {
+        "frequency": 784,
+        "gain": 0.1,
+        "decay": 0.18
+      },
+      {
+        "frequency": 980,
+        "gain": 0.07,
+        "decay": 0.13
+      },
+      {
+        "frequency": 1176,
+        "gain": 0.04,
+        "decay": 0.09
+      }
+    ]
+  },
+  {
+    "command": "clip_add",
+    "id": "plucked-string-harmonics-1",
+    "track": "plucked-string",
+    "source": "plucked-string-harmonics",
+    "start": 6,
+    "pan": 0,
+    "name": "harmonics"
+  },
+  {
+    "command": "track_add",
+    "id": "hand-clap",
+    "name": "Transient · Hand clap"
+  },
+  {
+    "command": "source_generate",
+    "id": "hand-clap-crack",
+    "wave": "noise",
+    "seconds": 0.042,
+    "frequency": 18000,
+    "endFrequency": 6500,
+    "attack": 0.001,
+    "release": 0.035,
+    "seed": 101,
+    "gain": 0.38
+  },
+  {
+    "command": "clip_add",
+    "id": "hand-clap-crack-1",
+    "track": "hand-clap",
+    "source": "hand-clap-crack",
+    "start": 10,
+    "pan": 0,
+    "name": "crack"
+  },
+  {
+    "command": "clip_add",
+    "id": "hand-clap-crack-2",
+    "track": "hand-clap",
+    "source": "hand-clap-crack",
+    "start": 10.013,
+    "pan": 0,
+    "name": "crack"
+  },
+  {
+    "command": "clip_add",
+    "id": "hand-clap-crack-3",
+    "track": "hand-clap",
+    "source": "hand-clap-crack",
+    "start": 10.028,
+    "pan": 0,
+    "name": "crack"
+  },
+  {
+    "command": "source_generate",
+    "id": "hand-clap-tail",
+    "wave": "noise",
+    "seconds": 0.16,
+    "frequency": 6200,
+    "endFrequency": 2100,
+    "attack": 0.005,
+    "release": 0.15,
+    "seed": 148,
+    "gain": 0.16
+  },
+  {
+    "command": "clip_add",
+    "id": "hand-clap-tail-1",
+    "track": "hand-clap",
+    "source": "hand-clap-tail",
+    "start": 10.037,
+    "pan": 0,
+    "name": "tail"
+  },
+  {
+    "command": "track_add",
+    "id": "metal-impact",
+    "name": "Transient · Metal impact"
+  },
+  {
+    "command": "source_generate",
+    "id": "metal-impact-strike",
+    "wave": "noise",
+    "seconds": 0.025,
+    "frequency": 14000,
+    "attack": 0.001,
+    "release": 0.024,
+    "seed": 211,
+    "gain": 0.42
+  },
+  {
+    "command": "clip_add",
+    "id": "metal-impact-strike-1",
+    "track": "metal-impact",
+    "source": "metal-impact-strike",
+    "start": 12,
+    "pan": 0,
+    "name": "strike"
+  },
+  {
+    "command": "source_generate",
+    "id": "metal-impact-ring",
+    "wave": "additive",
+    "seconds": 1.6,
+    "attack": 0.001,
+    "gain": 0.42,
+    "partials": [
+      {
+        "frequency": 624,
+        "gain": 0.32,
+        "decay": 0.61
+      },
+      {
+        "frequency": 955,
+        "gain": 0.27,
+        "decay": 0.42
+      },
+      {
+        "frequency": 1579,
+        "gain": 0.18,
+        "decay": 0.29
+      },
+      {
+        "frequency": 2981,
+        "gain": 0.16,
+        "decay": 0.14
+      }
+    ]
+  },
+  {
+    "command": "clip_add",
+    "id": "metal-impact-ring-1",
+    "track": "metal-impact",
+    "source": "metal-impact-ring",
+    "start": 12,
+    "pan": 0,
+    "name": "ring"
+  },
+  {
+    "command": "track_add",
+    "id": "water-drop",
+    "name": "Transient · Water drop"
+  },
+  {
+    "command": "source_generate",
+    "id": "water-drop-splash",
+    "wave": "noise",
+    "seconds": 0.022,
+    "frequency": 9000,
+    "attack": 0.001,
+    "release": 0.021,
+    "seed": 27,
+    "gain": 0.24
+  },
+  {
+    "command": "clip_add",
+    "id": "water-drop-splash-1",
+    "track": "water-drop",
+    "source": "water-drop-splash",
+    "start": 15,
+    "pan": 0,
+    "name": "splash"
+  },
+  {
+    "command": "source_generate",
+    "id": "water-drop-bubble",
+    "wave": "additive",
+    "seconds": 0.19,
+    "attack": 0.004,
+    "partials": [
+      {
+        "frequency": 470,
+        "endFrequency": 1270,
+        "gain": 0.7,
+        "decay": 0.054
+      },
+      {
+        "frequency": 940,
+        "endFrequency": 2540,
+        "gain": 0.12,
+        "decay": 0.033
+      }
+    ]
+  },
+  {
+    "command": "clip_add",
+    "id": "water-drop-bubble-1",
+    "track": "water-drop",
+    "source": "water-drop-bubble",
+    "start": 15.009,
+    "pan": 0,
+    "name": "bubble"
+  },
+  {
+    "command": "track_add",
+    "id": "electric-fan",
+    "name": "Mechanical · Electric fan"
+  },
+  {
+    "command": "source_generate",
+    "id": "electric-fan-motor",
+    "seconds": 6,
+    "frequency": 58,
+    "harmonics": 4,
+    "gain": 0.14,
+    "attack": 0.4,
+    "release": 0.7,
+    "am": {
+      "frequency": 7,
+      "depth": 0.4
+    }
+  },
+  {
+    "command": "clip_add",
+    "id": "electric-fan-motor-1",
+    "track": "electric-fan",
+    "source": "electric-fan-motor",
+    "start": 17,
+    "pan": 0,
+    "name": "motor"
+  },
+  {
+    "command": "source_generate",
+    "id": "electric-fan-blades",
+    "wave": "noise",
+    "seconds": 6,
+    "frequency": 1350,
+    "gain": 0.5,
+    "attack": 0.4,
+    "release": 0.7,
+    "seed": 171,
+    "am": {
+      "frequency": 7,
+      "depth": 0.78
+    }
+  },
+  {
+    "command": "clip_add",
+    "id": "electric-fan-blades-1",
+    "track": "electric-fan",
+    "source": "electric-fan-blades",
+    "start": 17,
+    "pan": 0,
+    "name": "blades"
+  },
+  {
+    "command": "track_add",
+    "id": "gear-mechanism",
+    "name": "Mechanical · Gear mechanism"
+  },
+  {
+    "command": "source_generate",
+    "id": "gear-mechanism-ratchet",
+    "wave": "noise",
+    "seconds": 0.095,
+    "frequency": 13000,
+    "endFrequency": 1600,
+    "attack": 0.001,
+    "release": 0.09,
+    "gain": 0.53,
+    "seed": 312
+  },
+  {
+    "command": "clip_add",
+    "id": "gear-mechanism-ratchet-1",
+    "track": "gear-mechanism",
+    "source": "gear-mechanism-ratchet",
+    "start": 32,
+    "pan": 0,
+    "name": "ratchet"
+  },
+  {
+    "command": "clip_add",
+    "id": "gear-mechanism-ratchet-2",
+    "track": "gear-mechanism",
+    "source": "gear-mechanism-ratchet",
+    "start": 32.17,
+    "pan": 0,
+    "name": "ratchet"
+  },
+  {
+    "command": "clip_add",
+    "id": "gear-mechanism-ratchet-3",
+    "track": "gear-mechanism",
+    "source": "gear-mechanism-ratchet",
+    "start": 32.39,
+    "pan": 0,
+    "name": "ratchet"
+  },
+  {
+    "command": "clip_add",
+    "id": "gear-mechanism-ratchet-4",
+    "track": "gear-mechanism",
+    "source": "gear-mechanism-ratchet",
+    "start": 32.49,
+    "pan": 0,
+    "name": "ratchet"
+  },
+  {
+    "command": "clip_add",
+    "id": "gear-mechanism-ratchet-5",
+    "track": "gear-mechanism",
+    "source": "gear-mechanism-ratchet",
+    "start": 32.91,
+    "pan": 0,
+    "name": "ratchet"
+  },
+  {
+    "command": "clip_add",
+    "id": "gear-mechanism-ratchet-6",
+    "track": "gear-mechanism",
+    "source": "gear-mechanism-ratchet",
+    "start": 33.08,
+    "pan": 0,
+    "name": "ratchet"
+  },
+  {
+    "command": "clip_add",
+    "id": "gear-mechanism-ratchet-7",
+    "track": "gear-mechanism",
+    "source": "gear-mechanism-ratchet",
+    "start": 33.42,
+    "pan": 0,
+    "name": "ratchet"
+  },
+  {
+    "command": "clip_add",
+    "id": "gear-mechanism-ratchet-8",
+    "track": "gear-mechanism",
+    "source": "gear-mechanism-ratchet",
+    "start": 33.55,
+    "pan": 0,
+    "name": "ratchet"
+  },
+  {
+    "command": "clip_add",
+    "id": "gear-mechanism-ratchet-9",
+    "track": "gear-mechanism",
+    "source": "gear-mechanism-ratchet",
+    "start": 33.78,
+    "pan": 0,
+    "name": "ratchet"
+  },
+  {
+    "command": "clip_add",
+    "id": "gear-mechanism-ratchet-10",
+    "track": "gear-mechanism",
+    "source": "gear-mechanism-ratchet",
+    "start": 34.13,
+    "pan": 0,
+    "name": "ratchet"
+  },
+  {
+    "command": "clip_add",
+    "id": "gear-mechanism-ratchet-11",
+    "track": "gear-mechanism",
+    "source": "gear-mechanism-ratchet",
+    "start": 34.23,
+    "pan": 0,
+    "name": "ratchet"
+  },
+  {
+    "command": "clip_add",
+    "id": "gear-mechanism-ratchet-12",
+    "track": "gear-mechanism",
+    "source": "gear-mechanism-ratchet",
+    "start": 34.75,
+    "pan": 0,
+    "name": "ratchet"
+  },
+  {
+    "command": "clip_add",
+    "id": "gear-mechanism-ratchet-13",
+    "track": "gear-mechanism",
+    "source": "gear-mechanism-ratchet",
+    "start": 34.93,
+    "pan": 0,
+    "name": "ratchet"
+  },
+  {
+    "command": "clip_add",
+    "id": "gear-mechanism-ratchet-14",
+    "track": "gear-mechanism",
+    "source": "gear-mechanism-ratchet",
+    "start": 35.3,
+    "pan": 0,
+    "name": "ratchet"
+  },
+  {
+    "command": "source_generate",
+    "id": "gear-mechanism-latch",
+    "seconds": 0.18,
+    "frequency": 285,
+    "endFrequency": 165,
+    "harmonics": 8,
+    "attack": 0.003,
+    "release": 0.17,
+    "gain": 0.26
+  },
+  {
+    "command": "clip_add",
+    "id": "gear-mechanism-latch-1",
+    "track": "gear-mechanism",
+    "source": "gear-mechanism-latch",
+    "start": 32.49,
+    "pan": 0,
+    "name": "latch"
+  },
+  {
+    "command": "clip_add",
+    "id": "gear-mechanism-latch-2",
+    "track": "gear-mechanism",
+    "source": "gear-mechanism-latch",
+    "start": 33.55,
+    "pan": 0,
+    "name": "latch"
+  },
+  {
+    "command": "clip_add",
+    "id": "gear-mechanism-latch-3",
+    "track": "gear-mechanism",
+    "source": "gear-mechanism-latch",
+    "start": 34.23,
+    "pan": 0,
+    "name": "latch"
+  },
+  {
+    "command": "clip_add",
+    "id": "gear-mechanism-latch-4",
+    "track": "gear-mechanism",
+    "source": "gear-mechanism-latch",
+    "start": 35.3,
+    "pan": 0,
+    "name": "latch"
+  },
+  {
+    "command": "track_add",
+    "id": "rain",
+    "name": "Environmental · Rain"
+  },
+  {
+    "command": "source_generate",
+    "id": "rain-left-bed",
+    "wave": "noise",
+    "seconds": 9,
+    "frequency": 6400,
+    "gain": 0.36,
+    "seed": 798,
+    "attack": 0.55,
+    "release": 0.75
+  },
+  {
+    "command": "clip_add",
+    "id": "rain-left-bed-1",
+    "track": "rain",
+    "source": "rain-left-bed",
+    "start": 37,
+    "pan": -0.65,
+    "name": "left-bed"
+  },
+  {
+    "command": "source_generate",
+    "id": "rain-right-bed",
+    "wave": "noise",
+    "seconds": 9,
+    "frequency": 8100,
+    "gain": 0.34,
+    "seed": 914,
+    "attack": 0.55,
+    "release": 0.75
+  },
+  {
+    "command": "clip_add",
+    "id": "rain-right-bed-1",
+    "track": "rain",
+    "source": "rain-right-bed",
+    "start": 37,
+    "pan": 0.65,
+    "name": "right-bed"
+  },
+  {
+    "command": "source_generate",
+    "id": "rain-drops",
+    "wave": "noise",
+    "seconds": 0.062,
+    "frequency": 12400,
+    "endFrequency": 2900,
+    "attack": 0.002,
+    "release": 0.056,
+    "gain": 0.22,
+    "seed": 567
+  },
+  {
+    "command": "clip_add",
+    "id": "rain-drops-1",
+    "track": "rain",
+    "source": "rain-drops",
+    "start": 37.6,
+    "pan": 0,
+    "name": "drops"
+  },
+  {
+    "command": "clip_add",
+    "id": "rain-drops-2",
+    "track": "rain",
+    "source": "rain-drops",
+    "start": 38.43,
+    "pan": 0,
+    "name": "drops"
+  },
+  {
+    "command": "clip_add",
+    "id": "rain-drops-3",
+    "track": "rain",
+    "source": "rain-drops",
+    "start": 38.61,
+    "pan": 0,
+    "name": "drops"
+  },
+  {
+    "command": "clip_add",
+    "id": "rain-drops-4",
+    "track": "rain",
+    "source": "rain-drops",
+    "start": 39.47,
+    "pan": 0,
+    "name": "drops"
+  },
+  {
+    "command": "clip_add",
+    "id": "rain-drops-5",
+    "track": "rain",
+    "source": "rain-drops",
+    "start": 40.16,
+    "pan": 0,
+    "name": "drops"
+  },
+  {
+    "command": "clip_add",
+    "id": "rain-drops-6",
+    "track": "rain",
+    "source": "rain-drops",
+    "start": 41.03,
+    "pan": 0,
+    "name": "drops"
+  },
+  {
+    "command": "clip_add",
+    "id": "rain-drops-7",
+    "track": "rain",
+    "source": "rain-drops",
+    "start": 41.2,
+    "pan": 0,
+    "name": "drops"
+  },
+  {
+    "command": "clip_add",
+    "id": "rain-drops-8",
+    "track": "rain",
+    "source": "rain-drops",
+    "start": 41.69,
+    "pan": 0,
+    "name": "drops"
+  },
+  {
+    "command": "clip_add",
+    "id": "rain-drops-9",
+    "track": "rain",
+    "source": "rain-drops",
+    "start": 42.33,
+    "pan": 0,
+    "name": "drops"
+  },
+  {
+    "command": "clip_add",
+    "id": "rain-drops-10",
+    "track": "rain",
+    "source": "rain-drops",
+    "start": 43.18,
+    "pan": 0,
+    "name": "drops"
+  },
+  {
+    "command": "clip_add",
+    "id": "rain-drops-11",
+    "track": "rain",
+    "source": "rain-drops",
+    "start": 43.33,
+    "pan": 0,
+    "name": "drops"
+  },
+  {
+    "command": "clip_add",
+    "id": "rain-drops-12",
+    "track": "rain",
+    "source": "rain-drops",
+    "start": 44.2,
+    "pan": 0,
+    "name": "drops"
+  },
+  {
+    "command": "clip_add",
+    "id": "rain-drops-13",
+    "track": "rain",
+    "source": "rain-drops",
+    "start": 44.67,
+    "pan": 0,
+    "name": "drops"
+  },
+  {
+    "command": "clip_add",
+    "id": "rain-drops-14",
+    "track": "rain",
+    "source": "rain-drops",
+    "start": 45.269999999999996,
+    "pan": 0,
+    "name": "drops"
+  },
+  {
+    "command": "track_add",
+    "id": "wind",
+    "name": "Environmental · Wind"
+  },
+  {
+    "command": "source_generate",
+    "id": "wind-air",
+    "wave": "noise",
+    "seconds": 10,
+    "frequency": 390,
+    "endFrequency": 940,
+    "seed": 581,
+    "attack": 1.6,
+    "release": 1.8,
+    "gain": 0.64,
+    "am": {
+      "frequency": 0.29,
+      "depth": 0.66
+    }
+  },
+  {
+    "command": "clip_add",
+    "id": "wind-air-1",
+    "track": "wind",
+    "source": "wind-air",
+    "start": 47,
+    "pan": 0,
+    "name": "air"
+  },
+  {
+    "command": "source_generate",
+    "id": "wind-gust",
+    "wave": "noise",
+    "seconds": 6.2,
+    "frequency": 1650,
+    "endFrequency": 550,
+    "seed": 193,
+    "attack": 1.8,
+    "release": 2.2,
+    "gain": 0.47
+  },
+  {
+    "command": "clip_add",
+    "id": "wind-gust-1",
+    "track": "wind",
+    "source": "wind-gust",
+    "start": 49.1,
+    "pan": 0.3,
+    "name": "gust"
+  },
+  {
+    "command": "track_add",
+    "id": "ocean-waves",
+    "name": "Environmental · Ocean waves"
+  },
+  {
+    "command": "source_generate",
+    "id": "ocean-waves-undertow",
+    "wave": "noise",
+    "seconds": 21,
+    "frequency": 340,
+    "endFrequency": 590,
+    "attack": 2.4,
+    "release": 2.4,
+    "gain": 0.51,
+    "seed": 911,
+    "am": {
+      "frequency": 0.17,
+      "depth": 0.52
+    }
+  },
+  {
+    "command": "clip_add",
+    "id": "ocean-waves-undertow-1",
+    "track": "ocean-waves",
+    "source": "ocean-waves-undertow",
+    "start": 58,
+    "pan": 0,
+    "name": "undertow"
+  },
+  {
+    "command": "source_generate",
+    "id": "ocean-waves-breakers",
+    "wave": "noise",
+    "seconds": 6.3,
+    "frequency": 4800,
+    "endFrequency": 740,
+    "attack": 1.9,
+    "release": 3.7,
+    "gain": 0.58,
+    "seed": 719
+  },
+  {
+    "command": "clip_add",
+    "id": "ocean-waves-breakers-1",
+    "track": "ocean-waves",
+    "source": "ocean-waves-breakers",
+    "start": 58.9,
+    "pan": -0.3,
+    "name": "breakers"
+  },
+  {
+    "command": "clip_add",
+    "id": "ocean-waves-breakers-2",
+    "track": "ocean-waves",
+    "source": "ocean-waves-breakers",
+    "start": 64.6,
+    "pan": -0.3,
+    "name": "breakers"
+  },
+  {
+    "command": "clip_add",
+    "id": "ocean-waves-breakers-3",
+    "track": "ocean-waves",
+    "source": "ocean-waves-breakers",
+    "start": 71.2,
+    "pan": -0.3,
+    "name": "breakers"
+  },
+  {
+    "command": "source_generate",
+    "id": "ocean-waves-foam",
+    "wave": "noise",
+    "seconds": 4.3,
+    "frequency": 6300,
+    "endFrequency": 1750,
+    "attack": 0.7,
+    "release": 3.2,
+    "gain": 0.32,
+    "seed": 295
+  },
+  {
+    "command": "clip_add",
+    "id": "ocean-waves-foam-1",
+    "track": "ocean-waves",
+    "source": "ocean-waves-foam",
+    "start": 61.2,
+    "pan": 0.4,
+    "name": "foam"
+  },
+  {
+    "command": "clip_add",
+    "id": "ocean-waves-foam-2",
+    "track": "ocean-waves",
+    "source": "ocean-waves-foam",
+    "start": 66.9,
+    "pan": 0.4,
+    "name": "foam"
+  },
+  {
+    "command": "clip_add",
+    "id": "ocean-waves-foam-3",
+    "track": "ocean-waves",
+    "source": "ocean-waves-foam",
+    "start": 73.5,
+    "pan": 0.4,
+    "name": "foam"
+  },
+  {
+    "command": "session_publish"
+  }
+]

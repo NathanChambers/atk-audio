@@ -1,0 +1,18 @@
+export const playbackCommands = [
+    {command: "session_start", asset: "playback", name: "Playback controls"},
+    {command: "control_add", id: "blend", name: "Blend", type: "slider", min: 800, max: 7000, value: 800},
+    {command: "control_add", id: "accent", name: "Accent", type: "trigger"},
+    {command: "source_generate", id: "low-tone", frequency: 48, seconds: 1, harmonics: 12, gain: 0.65, attack: 0, release: 0, prompt: "A low harmonic tone"},
+    {command: "source_generate", id: "high-tone", frequency: 156, seconds: 1, harmonics: 6, gain: 0.45, attack: 0, release: 0, prompt: "A high harmonic tone"},
+    {command: "source_generate", id: "noise", wave: "noise", frequency: 7000, endFrequency: 480, seconds: 0.24, gain: 0.9, attack: 0.002, release: 0.21, seed: 31, prompt: "A short noise burst"},
+    {command: "track_add", id: "low", name: "Low tone"},
+    {command: "track_add", id: "high", name: "High tone"},
+    {command: "track_add", id: "accent", name: "Noise"},
+    {command: "clip_add", id: "low-loop", track: "low", source: "low-tone", name: "Low loop", loop: true, duration: 4, fadeIn: 0.02, fadeOut: 0.02},
+    {command: "clip_add", id: "high-loop", track: "high", source: "high-tone", name: "High loop", loop: true, duration: 4, fadeIn: 0.02, fadeOut: 0.02},
+    {command: "clip_add", id: "noise-accent", track: "accent", source: "noise", name: "Noise accent", trigger: "accent", gain: 0.8},
+    {command: "mapping_set", control: "blend", clip: "low-loop", target: "gain", min: 0.8, max: 0.16},
+    {command: "mapping_set", control: "blend", clip: "low-loop", target: "pitch", min: 1, max: 1.7},
+    {command: "mapping_set", control: "blend", clip: "high-loop", target: "gain", min: 0.05, max: 0.8},
+    {command: "mapping_set", control: "blend", clip: "high-loop", target: "pitch", min: 0.6, max: 2.4},
+];
