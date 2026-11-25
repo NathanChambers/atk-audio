@@ -43,7 +43,7 @@ All times are seconds. IDs use lowercase letters, digits, underscores, and hyphe
 | project_list | None |
 | asset_inspect | asset |
 | asset_name | name |
-| source_generate | id, optional wave (tone, noise, additive, or formant), gain, seed, prompt. Tone, noise, and additive take seconds, attack, release, and optional am. Tone and noise take frequency and endFrequency. Tone takes harmonics, additive takes partials, and formant takes segments. |
+| source_generate | id, optional instrument and strike, or wave (tone, noise, additive, or formant). Shared options include gain, seed and prompt. Tone, noise, and additive take seconds, attack, release, and optional am. Tone and noise take frequency and endFrequency. Tone takes harmonics, additive takes partials, and formant takes segments. |
 | source_import | id, location (local file or direct HTTP(S) WAV URL), optional license, attribution, prompt |
 | melody_import | id, location (WAV path or URL), optional name and start. Adds a synthesized melody track and clip to the current draft. |
 | capture_system | Windows only. Optional seconds (0.25–30, default 15) and device (a Windows playback endpoint ID). Requires --output path.wav. |
@@ -67,6 +67,16 @@ A track’s **highPassHz** and **lowPassHz** filters run after clip playback and
 To synthesize speech-like sounds in the CLI, use `source_generate` with `wave: "formant"`. Each segment takes `seconds`, optional `formants` (resonance frequencies in Hz), optional `frequency` and `endFrequency` (voice pitch in Hz), and optional `noise` and `gain` from 0 to 1. Use formants for voiced sounds, noise for breath or consonants, and a segment with only a duration for silence. The optional source-level `transition`, in seconds from 0 to 0.06, blends consecutive segments. The source stores the segment settings for inspection.
 
 For a crossfade, map one clip's gain from 1 to 0 and the other from 0 to 1 across the same slider range. Use **curve: "equal-power"** on both clips for a power-based fade. With **combine: true**, the new gain mapping multiplies with the clip’s other gain mappings. Slider values outside **inputMin** and **inputMax** hold the corresponding endpoint.
+
+### Instrument voices
+
+Use `instrument` on `source_generate` to play a muted string (`muted-pluck`), a mellow bass (`rounded-bass`) or a ringing cup (`ceramic-tap`). For “play A4 softly on a muted string,” send this command in an active draft:
+
+```json
+{"command":"source_generate","id":"soft-a4","instrument":"muted-pluck","frequency":440,"strike":0.15}
+```
+
+Place the source with `clip_add`. Strike runs from 0 (soft) to 1 (firm), defaults to 0.5, and changes attack time and upper-partial strength. Use gain for level. Each voice rings for 1.5 seconds by default. Shorten it with `seconds`, or override `attack` and `release` in seconds. The source provenance records the instrument, strike and resolved additive settings.
 
 ## Build the validation suite
 
@@ -160,7 +170,7 @@ Features and mel accept **hopMs** (default 50 ms), **fftSize** (default 4096), a
 
 ## Verify
 
-Run `cargo test --locked` to build the CLI and check it alongside the read-only viewer. Then run `node tests/project.test.mjs` for regression tests against the built CLI, audio worker, and browser mixer. Set `ATK_AUDIO_TEST_CLI` to use a binary outside `target/debug`.
+Run `cargo test --locked` to build the CLI and check it alongside the read-only viewer. Then run `node tests/project.test.mjs` for regression tests against the built CLI, native audio engine, and browser mixer. Set `ATK_AUDIO_TEST_CLI` to use a binary outside `target/debug`.
 
 ## CLI command conventions
 

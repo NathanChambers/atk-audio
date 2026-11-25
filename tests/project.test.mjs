@@ -8,8 +8,8 @@ import {test} from "node:test";
 import {fileURLToPath} from "node:url";
 import {promisify} from "node:util";
 import {createMixer, decodeWav, presetEvents, presetValue} from "../web/audio.mjs";
-import {mixAudio, render} from "../src/worker/audio.mjs";
-import {analyzeAudio} from "../src/worker/analysis.mjs";
+import {mixAudio, render} from "./helpers/mixer.mjs";
+import {analyzeAudio} from "./helpers/analysis.mjs";
 import {playbackCommands} from "./helpers/playback.mjs";
 
 const execute = promisify(execFile);

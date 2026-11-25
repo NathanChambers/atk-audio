@@ -1,11 +1,9 @@
-mod engine;
 mod help;
 mod recording;
 #[cfg(windows)]
 mod loopback;
 
-use audio_workshop::{Result, VERSION, edits, project::Project, viewer};
-use engine::Engine;
+use audio_workshop::{Result, VERSION, audio, edits, project::Project, viewer};
 use serde_json::{Value, json};
 use std::env;
 use std::fs::{self, OpenOptions};
@@ -88,7 +86,6 @@ fn run() -> Result<()> {
         return viewer::serve(&project, viewer::parse_port(options.port.as_deref())?);
     }
 
-    let mut engine = None;
     let input = if options.validation {
         decode_commands(include_bytes!("fixtures/validation-suite.json"))?
     } else if let Some(path) = &options.file {
@@ -133,7 +130,7 @@ fn run() -> Result<()> {
         if let Some(recording) = &mut recording {
             recording.begin(&command)?;
         }
-        let result = execute_with_receipt(&project, &options, &mut engine, &command);
+        let result = execute_with_receipt(&project, &options, &command);
         if let Some(recording) = &mut recording {
             let state = recorded_state(&project, &options.session, &command);
             let reply = match &result {
@@ -223,10 +220,9 @@ fn decode_commands(bytes: &[u8]) -> Result<Value> {
 fn execute_with_receipt(
     project: &Project,
     options: &Options,
-    engine: &mut Option<Engine>,
     command: &Value,
 ) -> Result<Value> {
-    let mut reply = execute(project, options, engine, command)?;
+    let mut reply = execute(project, options, command)?;
     if let Some(path) = reply["output"].as_str() {
         let receipt = json!({"path": fs::canonicalize(path)?, "bytes": fs::metadata(path)?.len()});
         let mut result = reply.as_object().expect("command response object").clone();
@@ -240,7 +236,6 @@ fn execute_with_receipt(
 fn execute(
     project: &Project,
     options: &Options,
-    engine: &mut Option<Engine>,
     command: &Value,
 ) -> Result<Value> {
     if !command.is_object() {
@@ -263,11 +258,10 @@ fn execute(
             project.update(session, command, |_| unreachable!())?
         }
         Some("session_render" | "spectrogram" | "audio_analyze") => {
-            return process(project, options, engine, command);
+            return process(project, options, command);
         }
         Some("melody_import") => {
-            let (source, bytes) =
-                worker(engine)?.run(&json!({"operation": "source", "command": command}))?;
+            let (source, bytes) = audio::source(command)?;
             project.update(session, command, |asset| {
                 edits::add_melody(asset, command, &source)?;
                 project.store_source(&source, &bytes)?;
@@ -275,8 +269,7 @@ fn execute(
             })?
         }
         Some("source_generate" | "source_import") => {
-            let (source, bytes) =
-                worker(engine)?.run(&json!({"operation": "source", "command": command}))?;
+            let (source, bytes) = audio::source(command)?;
             project.update(session, command, |asset| {
                 let result = edits::add(&mut asset["sources"], source)?;
                 project.store_source(&result, &bytes)?;
@@ -365,7 +358,6 @@ fn capture_system(_: &Options, _: &Value) -> Result<Value> {
 fn process(
     project: &Project,
     options: &Options,
-    engine: &mut Option<Engine>,
     command: &Value,
 ) -> Result<Value> {
     let required = match (command["command"].as_str(), command["format"].as_str()) {
@@ -378,8 +370,7 @@ fn process(
         return Err(message.into());
     }
 
-    let request = json!({"operation": "process", "command": command, "project": project.root, "session": options.session});
-    let (mut result, bytes) = worker(engine)?.run(&request)?;
+    let (mut result, bytes) = audio::process(project, &options.session, command)?;
     let Some(output) = &options.output else {
         return Ok(json!({"ok": true, "result": result}));
     };
@@ -402,12 +393,4 @@ fn write_output(path: &Path, bytes: &[u8]) -> io::Result<()> {
         .create_new(true)
         .open(path)?
         .write_all(bytes)
-}
-
-fn worker(engine: &mut Option<Engine>) -> Result<&Engine> {
-    if engine.is_none() {
-        *engine = Some(Engine::create()?);
-    }
-
-    Ok(engine.as_ref().expect("initialized engine"))
 }

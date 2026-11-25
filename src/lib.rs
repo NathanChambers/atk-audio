@@ -1,3 +1,4 @@
+pub mod audio;
 pub mod edits;
 pub mod project;
 pub mod viewer;

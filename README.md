@@ -10,7 +10,7 @@ Design and analyze sound effects with an AI agent. Audition saved arrangements i
 
 ## Install
 
-Install a stable Rust toolchain and Node.js 20 or newer. The browser viewer uses AudioWorklet for playback. From the atk-audio source checkout, run:
+Install a stable Rust toolchain. The browser viewer uses AudioWorklet for playback. From the atk-audio source checkout, run:
 
 ```sh
 cargo install --path . --locked

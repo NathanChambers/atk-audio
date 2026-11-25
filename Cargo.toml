@@ -8,7 +8,11 @@ readme = "README.md"
 license = "MIT"
 
 [dependencies]
+png = "0.17"
+rustfft = "6"
 serde_json = { version = "1", features = ["float_roundtrip"] }
+sha2 = "0.10"
+ureq = "2.12"
 
 [[bin]]
 name = "atk-audio-cli"

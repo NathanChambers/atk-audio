@@ -19,6 +19,7 @@ impl TestProject {
 
     fn command(&self, session: &str, input: Value, extra: &[&str]) -> Output {
         Command::new(env!("CARGO_BIN_EXE_atk-audio-cli"))
+            .env("PATH", "")
             .current_dir(&self.0)
             .args(["--session", session, "--command", &input.to_string()])
             .args(extra)
@@ -52,6 +53,26 @@ fn replies(output: Output) -> Vec<Value> {
         .lines()
         .map(|line| serde_json::from_str(&line.unwrap()).unwrap())
         .collect()
+}
+
+#[test]
+fn instrument_sources_preserve_the_reference_wavs() {
+    let project = TestProject::create();
+    let references = [
+        ("muted-pluck", "9262f0dd166047d900bf3da803b114f191c66c397f6ec03faabf83c1f771d93a"),
+        ("rounded-bass", "f20ffe2de095842fdef825b2a4c307b9d3bb5847b48eb06e5eab23d37689ccde"),
+        ("ceramic-tap", "af0e44ecd2cc27ef986f00c52220fdb212e91ecedd01a577efe822dbd709e95b"),
+    ];
+    let mut commands = vec![json!({"command":"session_start","asset":"instruments"})];
+    for (instrument, _) in references {
+        commands.push(json!({"command":"source_generate","instrument":instrument,"id":instrument}));
+    }
+
+    let results = replies(project.command("reference", json!(commands), &[]));
+    for (result, (instrument, hash)) in results[1..].iter().zip(references) {
+        assert_eq!(result["result"]["hash"], hash);
+        assert_eq!(result["result"]["provenance"]["settings"]["instrument"], instrument);
+    }
 }
 
 #[test]
