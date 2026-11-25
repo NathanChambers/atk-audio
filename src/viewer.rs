@@ -13,7 +13,7 @@ use std::time::{Duration, Instant, SystemTime};
 type DocumentStamps = BTreeMap<(&'static str, OsString), (u64, Option<SystemTime>)>;
 
 pub fn parse_port(port: Option<&str>) -> Result<u16> {
-    port.unwrap_or("7880")
+    port.unwrap_or("0")
         .parse()
         .map_err(|_| "Invalid viewer port".into())
 }

@@ -26,7 +26,7 @@ Add the [`atk-audio` skill](.agents/skills/atk-audio/SKILL.md) using your agent'
 
 ## Open the viewer
 
-Run `atk-audio` from your project directory and open the [Audio viewer](http://127.0.0.1:7880). Once your agent has saved a workspace, choose it with the folder button. From there, press **Play** to hear the arrangement and use **Solo** to audition individual tracks.
+Run `atk-audio` from your project directory and open the viewer URL printed at startup. Once your agent has saved a workspace, choose it with the folder button. From there, press **Play** to hear the arrangement and use **Solo** to audition individual tracks.
 
 ## Learn more
 

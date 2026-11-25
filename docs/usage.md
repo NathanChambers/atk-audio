@@ -12,11 +12,11 @@ atk-audio-cli --session audio-validation-suite --validation-suite
 atk-audio
 ```
 
-Open the [Audio viewer](http://127.0.0.1:7880), use the folder button to select **Audio Validation Suite**, and press **Play**. Use **Solo** to audition one track at a time. The CLI saves your session under `.audio/`.
+Open the viewer URL printed at startup, use the folder button to select **Audio Validation Suite**, and press **Play**. Use **Solo** to audition one track at a time. The CLI saves your session under `.audio/`.
 
 ## Open the viewer
 
-Run `atk-audio` from your project directory and open [the project viewer](http://127.0.0.1:7880) in a browser with AudioWorklet support. Press **Ctrl+P** to choose a saved session or published asset. The validation suite below creates a session you can audition.
+Run `atk-audio` from your project directory and open the viewer URL printed at startup in a browser with AudioWorklet support. Press **Ctrl+P** to choose a saved session or published asset. The validation suite below creates a session you can audition.
 
 `atk-audio` reads saved sessions and assets from the current directory. To view another directory, run `atk-audio "D:\Game Audio"` or pass the same path with `--project`. Use `--port PORT` to change the port. The viewer's playback controls are local to the browser. Make project edits with `atk-audio-cli`. The existing `atk-audio-cli --serve` command also starts the Rust viewer.
 

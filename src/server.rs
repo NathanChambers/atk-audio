@@ -38,7 +38,7 @@ fn run() -> Result<()> {
             }
             Some("--help" | "-h") => {
                 println!(
-                    "atk-audio [--project DIR | DIR] [--port 7880]\nServes saved audio sessions and assets in a read-only browser viewer.\nThe directory defaults to the current working directory."
+                    "atk-audio [--project DIR | DIR] [--port PORT]\nServes saved audio sessions and assets in a read-only browser viewer.\nThe directory defaults to the current working directory. Omit --port or pass 0 for an available port."
                 );
                 return Ok(());
             }
