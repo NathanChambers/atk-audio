@@ -40,6 +40,8 @@ footer { justify-content: center; flex-wrap: wrap; background: linear-gradient(t
 #connection-dot { width: 6px; height: 6px; border-radius: 50%; background: #b5a67f; }
 #connection-dot.live { background: #8cbea1; }
 #connection-dot.offline { background: #df987e; }
+#revision { color: #707b89; border-left: 1px solid #56617066; padding-left: 8px; font-variant-numeric: tabular-nums; }
+#revision:empty { display: none; }
 
 button, input, select { font: inherit; }
 button, select, .panel { color: inherit; background: #20242b; border: 1px solid #ffffff20; border-radius: 7px; }

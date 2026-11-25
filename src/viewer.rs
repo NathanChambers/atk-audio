@@ -1,10 +1,16 @@
 use crate::{Result, project::Project};
 use serde_json::Value;
+use std::collections::BTreeMap;
+use std::ffi::OsString;
 use std::fs;
 use std::hash::{DefaultHasher, Hash, Hasher};
 use std::io::{self, BufRead, BufReader, Read, Write};
 use std::net::{TcpListener, TcpStream};
-use std::time::Duration;
+use std::sync::mpsc::{self, Receiver, RecvTimeoutError, SyncSender};
+use std::thread;
+use std::time::{Duration, Instant, SystemTime};
+
+type DocumentStamps = BTreeMap<(&'static str, OsString), (u64, Option<SystemTime>)>;
 
 pub fn parse_port(port: Option<&str>) -> Result<u16> {
     port.unwrap_or("7880")
@@ -14,16 +20,24 @@ pub fn parse_port(port: Option<&str>) -> Result<u16> {
 
 pub fn serve(project: &Project, port: u16) -> Result<()> {
     let listener = TcpListener::bind(("127.0.0.1", port))?;
+    let (event_streams, pending) = mpsc::sync_channel(16);
+    let watched_project = Project::new(project.root.clone());
+    thread::spawn(move || stream_changes(&watched_project, pending));
+
     println!("Audio Workbench viewer: http://{}", listener.local_addr()?);
     for stream in listener.incoming() {
         let Ok(stream) = stream else { continue };
-        let _ = handle(stream, project);
+        let _ = handle(stream, project, &event_streams);
     }
 
     Ok(())
 }
 
-fn handle(mut stream: TcpStream, project: &Project) -> Result<()> {
+fn handle(
+    mut stream: TcpStream,
+    project: &Project,
+    event_streams: &SyncSender<TcpStream>,
+) -> Result<()> {
     let timeout = Some(Duration::from_secs(2));
     stream.set_read_timeout(timeout)?;
     stream.set_write_timeout(timeout)?;
@@ -60,6 +74,11 @@ fn handle(mut stream: TcpStream, project: &Project) -> Result<()> {
 
     if let Some((content_type, bytes)) = static_file(path) {
         return Ok(send(&mut stream, "200 OK", content_type, bytes, None)?);
+    }
+
+    if path == "/api/events" {
+        let _ = event_streams.try_send(stream);
+        return Ok(());
     }
 
     let segments: Vec<_> = path.split('/').collect();
@@ -102,6 +121,86 @@ fn handle(mut stream: TcpStream, project: &Project) -> Result<()> {
     }
 
     Ok(())
+}
+
+fn stream_changes(project: &Project, pending: Receiver<TcpStream>) {
+    let mut clients = Vec::new();
+    let mut documents = None;
+    let interval = Duration::from_millis(250);
+    let mut next_check = Instant::now();
+    let mut heartbeat = Instant::now();
+
+    loop {
+        let incoming = if clients.is_empty() {
+            documents = None;
+            pending.recv().map_err(|_| RecvTimeoutError::Disconnected)
+        } else {
+            pending.recv_timeout(next_check.saturating_duration_since(Instant::now()))
+        };
+
+        match incoming {
+            Ok(mut stream) if clients.len() < 32 => {
+                if clients.is_empty() {
+                    documents = document_stamps(project).ok();
+                    heartbeat = Instant::now() + Duration::from_secs(15);
+                }
+
+                let headers = b"HTTP/1.1 200 OK\r\nContent-Type: text/event-stream\r\nCache-Control: no-store\r\nConnection: close\r\n\r\n: connected\n\n";
+                if stream.set_nonblocking(true).is_ok() && stream.write_all(headers).is_ok() {
+                    clients.push(stream);
+                }
+            }
+            Err(RecvTimeoutError::Disconnected) => break,
+            _ => {}
+        }
+
+        let now = Instant::now();
+        if clients.is_empty() || now < next_check {
+            continue;
+        }
+
+        next_check = now + interval;
+        if let Ok(current) = document_stamps(project) {
+            if documents.as_ref() != Some(&current) {
+                documents = Some(current);
+                clients
+                    .retain_mut(|stream| stream.write_all(b"event: change\ndata: {}\n\n").is_ok());
+            }
+        }
+
+        if now >= heartbeat {
+            heartbeat = now + Duration::from_secs(15);
+            clients.retain_mut(|stream| stream.write_all(b": keepalive\n\n").is_ok());
+        }
+    }
+}
+
+fn document_stamps(project: &Project) -> io::Result<DocumentStamps> {
+    let mut documents = BTreeMap::new();
+    for kind in ["assets", "sessions"] {
+        let path = project.root.join(".audio").join(kind);
+        let entries = match fs::read_dir(path) {
+            Ok(entries) => entries,
+            Err(error) if error.kind() == io::ErrorKind::NotFound => continue,
+            Err(error) => return Err(error),
+        };
+
+        for entry in entries {
+            let entry = entry?;
+            let path = entry.path();
+            if path.extension().and_then(|extension| extension.to_str()) != Some("json") {
+                continue;
+            }
+
+            let metadata = entry.metadata()?;
+            documents.insert(
+                (kind, entry.file_name()),
+                (metadata.len(), metadata.modified().ok()),
+            );
+        }
+    }
+
+    Ok(documents)
 }
 
 fn static_file(path: &str) -> Option<(&'static str, &'static [u8])> {

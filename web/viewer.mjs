@@ -5,10 +5,14 @@ const element = id => document.getElementById(id);
 let selection = null;
 let documentTag = null;
 let projectTag = null;
-let nextDiscovery = 0;
+let events = null;
+let reconnectTimer = null;
+let discoveryPending = true;
+let refreshQueued = false;
 let refreshTimer = null;
 let refreshController = null;
 let refreshStopped = false;
+let playbackUpdatePending = false;
 let asset = null;
 let sources = {};
 let values = {};
@@ -94,44 +98,79 @@ async function refreshWorkspaces(signal) {
     if (element("workspace-picker").open) drawWorkspaces();
 }
 
-function scheduleRefresh(delay) {
-    clearTimeout(refreshTimer);
-    if (!refreshStopped && !refreshController) refreshTimer = setTimeout(refresh, delay);
+function scheduleRefresh() {
+    if (refreshStopped) return;
+
+    refreshQueued = true;
+    if (!refreshController) {
+        clearTimeout(refreshTimer);
+        refreshTimer = setTimeout(refresh, 0);
+    }
 }
 
-async function refresh() {
+function refreshProject() {
+    discoveryPending = true;
+    scheduleRefresh();
+}
+
+function connectEvents() {
+    if (refreshStopped) return;
+
+    events = new EventSource("/api/events");
+    events.onopen = refreshProject;
+    events.addEventListener("change", refreshProject);
+    events.onerror = () => {
+        connection("Reconnecting", "offline");
+        if (events?.readyState === EventSource.CLOSED) {
+            reconnectTimer = setTimeout(connectEvents, 1000);
+        }
+    };
+}
+
+async function refresh(canRetry = true) {
+    clearTimeout(refreshTimer);
+    refreshQueued = false;
+
     const controller = new AbortController();
     refreshController = controller;
     const signal = controller.signal;
     const version = selectionVersion;
     const timeout = setTimeout(() => controller.abort(), 5000);
+    const discover = discoveryPending;
+    discoveryPending = false;
+    let retry = false;
+
     try {
-        if (Date.now() >= nextDiscovery) {
-            await refreshWorkspaces(signal);
-            nextDiscovery = Date.now() + 5000;
-        }
+        if (discover) await refreshWorkspaces(signal);
         if (version !== selectionVersion || refreshStopped) return;
 
         let updatePending = false;
         if (selection) updatePending = await refreshSelection(signal);
         else {
             element("workspace-path").textContent = "Audio workspace";
+            element("revision").textContent = "";
             show("Choose a published asset or session to load.");
         }
         if (version !== selectionVersion || refreshStopped) return;
 
-        connection(updatePending ? "Live · Update after playback" : "Live", "live");
+        playbackUpdatePending = updatePending;
+        if (updatePending && !playback) scheduleRefresh();
+        if (events?.readyState === EventSource.OPEN) {
+            connection(updatePending ? "Live · Update after playback" : "Live", "live");
+        }
     } catch (error) {
+        if (discover) discoveryPending = true;
         if (version !== selectionVersion || refreshStopped) return;
 
+        retry = canRetry;
         connection("Reconnecting", "offline");
         if (!documentTag) show(signal.aborted ? "Waiting for the audio server…" : error.message);
     } finally {
         clearTimeout(timeout);
         controller.abort();
         refreshController = null;
-        const delay = document.hidden ? 2000 : 400;
-        scheduleRefresh(version === selectionVersion ? delay : 0);
+        if (refreshQueued) scheduleRefresh();
+        else if (retry) refreshTimer = setTimeout(() => refresh(false), 1000);
     }
 }
 
@@ -178,18 +217,18 @@ function openWorkspaces() {
     workspaceIndex = workspaces.findIndex(entry => entry.path === selection);
     picker.showModal();
     drawWorkspaces();
-    nextDiscovery = 0;
-    scheduleRefresh(0);
+    refreshProject();
 }
 
 function load({path, label}) {
     if (selection === path) {
-        scheduleRefresh(0);
+        scheduleRefresh();
         return;
     }
 
     selectionVersion++;
     stop();
+    playbackUpdatePending = false;
     selection = path;
     documentTag = null;
     asset = null;
@@ -202,9 +241,10 @@ function load({path, label}) {
     element("editor").hidden = true;
     element("footer").hidden = true;
     element("workspace-path").textContent = label;
+    element("revision").textContent = "";
     show("Loading audio…");
     refreshController?.abort();
-    scheduleRefresh(0);
+    scheduleRefresh();
 }
 
 async function refreshSelection(signal) {
@@ -230,8 +270,11 @@ async function refreshSelection(signal) {
     stop();
     applySnapshot(next, loaded);
     documentTag = snapshot.tag;
-    const label = snapshot.data.revision === undefined ? "Session · " + snapshot.data.id : "Asset · r" + snapshot.data.revision;
+    const isSession = snapshot.data.revision === undefined;
+    const label = isSession ? "Session · " + snapshot.data.id : "Asset";
+    const draftRevision = "draft rev " + (snapshot.data.draftRevision ?? 0) + " · from rev " + snapshot.data.baseRevision;
     element("workspace-path").textContent = next.name + " · " + label;
+    element("revision").textContent = isSession ? draftRevision : "rev " + snapshot.data.revision;
     return false;
 }
 
@@ -585,6 +628,7 @@ function stop() {
     setTimelineDuration(arrangementDuration);
     showPlaybackPosition(0);
     element("stop").disabled = true;
+    if (playbackUpdatePending) scheduleRefresh();
 }
 
 async function play(preset = null) {
@@ -705,6 +749,9 @@ action("play", () => play(selectedPreset));
 action("stop", stop);
 window.addEventListener("pagehide", () => {
     refreshStopped = true;
+    events?.close();
+    events = null;
+    clearTimeout(reconnectTimer);
     clearTimeout(refreshTimer);
     refreshController?.abort();
 });
@@ -712,7 +759,8 @@ window.addEventListener("pageshow", event => {
     if (!event.persisted) return;
 
     refreshStopped = false;
-    nextDiscovery = 0;
-    scheduleRefresh(0);
+    connectEvents();
+    refreshProject();
 });
-scheduleRefresh(0);
+connectEvents();
+refreshProject();

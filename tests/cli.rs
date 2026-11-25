@@ -182,6 +182,7 @@ fn viewer_reads_snapshots_and_rejects_writes() {
         .unwrap();
     let address = address.trim().split("http://").last().unwrap();
 
+    let mut events = open_event_stream(address);
     let page = request(address, "GET / HTTP/1.1\r\n\r\n");
     assert!(page.contains("/viewer.mjs"));
     assert!(page.contains(r#"aria-label="Record audio""#));
@@ -208,6 +209,52 @@ fn viewer_reads_snapshots_and_rejects_writes() {
         snapshot,
         request(address, "GET /api/sessions/draft HTTP/1.1\r\n\r\n")
     );
+
+    replies(project.command("draft", json!({"command": "session_publish"}), &[]));
+    let mut event = String::new();
+    events.read_line(&mut event).unwrap();
+    assert_eq!(event, "event: change\n");
+    let published = request(address, "GET /api/assets/pickup HTTP/1.1\r\n\r\n");
+    assert!(published.starts_with("HTTP/1.1 200"));
+    assert!(published.contains("\"revision\":1"));
+
+    drop(events);
+    replies(project.command(
+        "second",
+        json!({"command": "session_start", "asset": "new"}),
+        &[],
+    ));
+    let _reconnected = open_event_stream(address);
+    let project = request(address, "GET /api/project HTTP/1.1\r\n\r\n");
+    assert!(project.contains("\"id\":\"second\""));
+}
+
+fn open_event_stream(address: &str) -> BufReader<TcpStream> {
+    let mut stream = TcpStream::connect(address).unwrap();
+    stream
+        .set_read_timeout(Some(std::time::Duration::from_secs(3)))
+        .unwrap();
+    stream
+        .write_all(b"GET /api/events HTTP/1.1\r\n\r\n")
+        .unwrap();
+    let mut reader = BufReader::new(stream);
+    let mut headers = String::new();
+    for line in reader.by_ref().lines() {
+        let line = line.unwrap();
+        if line.is_empty() {
+            break;
+        }
+        headers.push_str(&line);
+    }
+    assert!(headers.starts_with("HTTP/1.1 200"));
+    assert!(headers.contains("Content-Type: text/event-stream"));
+    let mut ready = String::new();
+    reader.read_line(&mut ready).unwrap();
+    assert_eq!(ready, ": connected\n");
+    ready.clear();
+    reader.read_line(&mut ready).unwrap();
+    assert_eq!(ready, "\n");
+    reader
 }
 
 fn request(address: &str, input: &str) -> String {
@@ -219,4 +266,18 @@ fn request(address: &str, input: &str) -> String {
     let mut response = String::new();
     stream.read_to_string(&mut response).unwrap();
     response
+}
+
+#[test]
+fn draft_edits_advance_the_draft_revision() {
+    let project = TestProject::create();
+    let start = json!({"command": "session_start", "asset": "pickup"});
+    replies(project.command("draft", start, &[]));
+    let track = json!({"command": "track_add", "id": "main"});
+    replies(project.command("draft", track.clone(), &[]));
+    assert!(!project.command("draft", track, &[]).status.success());
+
+    let draft = replies(project.command("draft", json!({"command": "session_inspect"}), &[]));
+    assert_eq!(draft[0]["result"]["draftRevision"], 1);
+    assert_eq!(draft[0]["result"]["baseRevision"], 0);
 }

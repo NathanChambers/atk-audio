@@ -84,6 +84,8 @@ impl Project {
             _ => {
                 let mut session = self.document("sessions", session_id)?;
                 let result = edit(&mut session["asset"])?;
+                let draft_revision = session["draftRevision"].as_u64().unwrap_or(0);
+                session["draftRevision"] = json!(draft_revision.checked_add(1).ok_or("Draft revision overflow")?);
                 write_json(&path, &session)?;
                 Ok(result)
             }
@@ -116,7 +118,7 @@ impl Project {
             }
         };
         let session =
-            json!({"version": 1, "id": session_id, "baseRevision": revision, "asset": asset});
+            json!({"version": 1, "id": session_id, "baseRevision": revision, "draftRevision": 0, "asset": asset});
         write_json(path, &session)?;
 
         Ok(session)
