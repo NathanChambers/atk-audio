@@ -5,6 +5,8 @@ description: Use the Audio Workbench CLI to create, edit, audition, analyze, or 
 
 # atk-audio
 
+When this skill is invoked, use the Audio Workbench CLI command workflow unless the user explicitly specifies another method. Author audio in the target project with `atk-audio-cli` commands. Scripts may prepare and submit CLI command batches. If the CLI cannot perform a required operation, explain the limitation and ask before switching to external authoring.
+
 - Check `atk-audio-cli --help` for commands and `atk-audio --help` for viewer options. Use the source checkout README for installation and the command reference.
 - Run `atk-audio-cli` from the intended project directory or pass `--project DIR`. Use `project_list` to find saved assets and sessions. Use a distinct session ID for a new draft.
 - Pass JSON through stdin or `--file FILE`. In PowerShell, use `'{"command":"project_list"}' | atk-audio-cli --project .`.
