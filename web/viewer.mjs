@@ -647,7 +647,7 @@ function startPlayback(preset) {
     const sustain = preset?.sustain ?? false;
     const duration = preset?.seconds ?? (timelineDuration(asset) || maxSeconds);
     const initial = preset ? presetEvents(preset) : initialEvents();
-    const node = new AudioWorkletNode(context, "audio-workbench", {
+    const node = new AudioWorkletNode(context, "atk-audio", {
         numberOfInputs: 0,
         numberOfOutputs: 1,
         outputChannelCount: [2],

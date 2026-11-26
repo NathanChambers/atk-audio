@@ -1,4 +1,4 @@
-use audio_workshop::project::unique_name;
+use atk_audio::project::unique_name;
 use serde_json::{Value, json};
 use std::fs;
 use std::io::{BufRead, BufReader, Read, Write};

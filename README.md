@@ -1,4 +1,4 @@
-# ATK Audio
+# atk-audio
 
 Design and analyze sound effects with an AI agent. Audition saved arrangements in a local browser viewer.
 
@@ -35,8 +35,8 @@ Run `atk-audio` from your project directory and open the viewer URL printed at s
 
 ## Related tools
 
-- [ATK Mesh](https://github.com/NathanChambers/atk-mesh)
-- [ATK UI](https://github.com/NathanChambers/atk-ui)
+- [atk-mesh](https://github.com/NathanChambers/atk-mesh)
+- [atk-ui](https://github.com/NathanChambers/atk-ui)
 
 ## License
 

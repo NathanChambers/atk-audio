@@ -24,7 +24,7 @@ pub fn serve(project: &Project, port: u16) -> Result<()> {
     let watched_project = Project::new(project.root.clone());
     thread::spawn(move || stream_changes(&watched_project, pending));
 
-    println!("Audio Workbench viewer: http://{}", listener.local_addr()?);
+    println!("atk-audio viewer: http://{}", listener.local_addr()?);
     for stream in listener.incoming() {
         let Ok(stream) = stream else { continue };
         let _ = handle(stream, project, &event_streams);

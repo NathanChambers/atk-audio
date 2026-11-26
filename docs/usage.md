@@ -1,4 +1,4 @@
-# ATK Audio usage guide
+# atk-audio usage guide
 
 [Installation and quickstart](../README.md)
 

@@ -1,9 +1,12 @@
+#[allow(dead_code)]
+mod mcp;
+
 mod help;
 mod recording;
 #[cfg(windows)]
 mod loopback;
 
-use audio_workshop::{Result, VERSION, audio, edits, project::Project, viewer};
+use atk_audio::{Result, VERSION, audio, edits, project::Project, viewer};
 use serde_json::{Value, json};
 use std::env;
 use std::fs::{self, OpenOptions};
@@ -15,12 +18,13 @@ const HELP: &str = "atk-audio-cli [--project DIR] [--session NAME] [--batch] [--
 atk-audio-cli --project DIR --session audio-validation-suite --validation-suite\n\
 atk-audio [--project DIR | DIR] [--port 7880]\n\
 Commands can also be piped as JSON. Submit a command array to run commands in order.\n\
+Use --mcp to serve MCP over stdio or --commands for machine-readable help.\n\
 Use --batch to require an array. Send {\"command\":\"help\"} for command discovery.\n\
 Use --debug to record requests, replies, and saved session state. Use --replay FILE to read a recording.\n\
 On Windows, capture_system records the playback device to a WAV with --output FILE.\n\
 Use spectrogram for a PNG heatmap or audio_analyze with format waveform, features, mel, pcm or impulse.";
 
-#[derive(Default)]
+#[derive(Clone, Default)]
 struct Options {
     project: PathBuf,
     session: String,
@@ -34,6 +38,8 @@ struct Options {
     version: bool,
     batch: bool,
     debug: bool,
+    mcp: bool,
+    commands: bool,
 }
 
 fn main() -> ExitCode {
@@ -41,7 +47,9 @@ fn main() -> ExitCode {
         Ok(()) => ExitCode::SUCCESS,
         Err(error) => {
             let reply = json!({"ok": false, "error": error.to_string()});
-            println!("{reply}");
+            if !env::args().any(|argument| argument == "--mcp") {
+                println!("{reply}");
+            }
             eprintln!("{reply}");
             ExitCode::FAILURE
         }
@@ -67,7 +75,12 @@ fn run() -> Result<()> {
         return recording::replay(Path::new(&path), frame);
     }
 
-    let options = parse_options()?;
+    let mut options = parse_options()?;
+    let catalog = mcp_catalog();
+    if options.commands {
+        println!("{}", json!({"tools":catalog}));
+        return Ok(());
+    }
     if options.version {
         println!("atk-audio-cli {VERSION}");
         return Ok(());
@@ -78,6 +91,14 @@ fn run() -> Result<()> {
         return Ok(());
     }
 
+    if options.mcp {
+        options.project = fs::canonicalize(&options.project)?;
+        env::set_current_dir(&options.project)?;
+        let project = Project::new(options.project.clone());
+        return Ok(mcp::serve("atk-audio", &catalog, true, |name, arguments| {
+            mcp_execute(&project, &options, name, arguments)
+        })?);
+    }
     let project = Project::new(options.project.clone());
     if options.serve {
         if options.debug {
@@ -130,7 +151,9 @@ fn run() -> Result<()> {
         if let Some(recording) = &mut recording {
             recording.begin(&command)?;
         }
-        let result = execute_with_receipt(&project, &options, &command);
+        let result = mcp::call_local(command.clone(), "batch", |name, arguments| {
+            mcp_execute(&project, &options, name, arguments)
+        });
         if let Some(recording) = &mut recording {
             let state = recorded_state(&project, &options.session, &command);
             let reply = match &result {
@@ -203,6 +226,8 @@ fn parse_options() -> Result<Options> {
             "--serve" if inline.is_none() => options.serve = true,
             "--batch" if inline.is_none() => options.batch = true,
             "--debug" if inline.is_none() => options.debug = true,
+            "--mcp" if inline.is_none() => options.mcp = true,
+            "--commands" if inline.is_none() => options.commands = true,
             "--help" | "-h" if inline.is_none() => options.help = true,
             "--version" | "-V" if inline.is_none() => options.version = true,
             _ => return Err(format!("Unknown option: {argument}").into()),
@@ -282,6 +307,34 @@ fn execute(
     Ok(json!({"ok": true, "result": result}))
 }
 
+fn mcp_catalog() -> Vec<Value> {
+    let help = command_help();
+    let mut catalog: Vec<_> = help["commands"].as_object().unwrap().iter().map(|(name, example)| {
+        let mut tool = mcp::example_tool(name, example);
+        if matches!(name.as_str(), "session_render" | "spectrogram" | "audio_analyze" | "capture_system") {
+            tool["inputSchema"]["properties"]["output_path"] = json!({"type":"string"});
+        }
+        tool
+    }).collect();
+    catalog.push(mcp::batch_tool("batch"));
+    catalog
+}
+
+fn mcp_execute(project: &Project, options: &Options, name: &str, arguments: &Value) -> std::result::Result<Value, String> {
+    if name == "batch" {
+        let commands = mcp::batch_commands(arguments)?;
+        return Ok(mcp::run_batch(commands, |command| {
+            execute_with_receipt(project, options, command).map_err(|error| error.to_string())
+        }));
+    }
+    let mut request = mcp::native_command(name, arguments)?;
+    let mut options = options.clone();
+    if let Some(path) = request.as_object_mut().unwrap().remove("output_path") {
+        options.output = Some(PathBuf::from(path.as_str().ok_or("output_path must be a string")?));
+    }
+    execute_with_receipt(project, &options, &request).map_err(|error| error.to_string())
+}
+
 fn command_help() -> Value {
     json!({
         "commands": {
@@ -292,30 +345,30 @@ fn command_help() -> Value {
             "session_publish": {},
             "asset_inspect": {"asset": "asset ID"},
             "asset_name": {"name": "display name"},
-            "source_generate": {},
-            "source_import": {},
+            "source_generate": {"id":"source ID", "instrument":"instrument or synthesis recipe", "frequency":440},
+            "source_import": {"id":"source ID", "location":"WAV path"},
             "melody_import": {"id": "source ID", "location": "WAV path"},
             "track_add": {"id": "track ID"},
             "track_edit": {"id": "track ID"},
             "clip_add": {"id": "clip ID", "track": "track ID", "source": "source ID"},
             "clip_edit": {"id": "clip ID"},
             "clip_remove": {"id": "clip ID"},
-            "clip_split": {"id": "clip ID"},
+            "clip_split": {"id": "clip ID", "newId":"new clip ID", "time":1.0},
             "control_add": {"id": "control ID", "type": "slider or trigger"},
             "mapping_set": {},
             "preset_set": {},
             "preset_remove": {"id": "preset ID"},
-            "session_render": {},
-            "spectrogram": {},
-            "audio_analyze": {},
-            "capture_system": {"seconds": 15}
+            "session_render": {"seconds":4.0},
+            "spectrogram": {"scope":"source | clip | track | mix | wav", "id":"source, clip or track ID", "location":"WAV path for scope wav", "start":0.0, "end":2.0},
+            "audio_analyze": {"format":"features | waveform | mel | pcm", "scope":"source | clip | track | mix | wav", "id":"source, clip or track ID", "location":"WAV path for scope wav", "start":0.0, "end":2.0},
+            "capture_system": {"seconds":15, "device":"optional Windows playback device name"}
         },
         "examples": [{"command": "project_list"}, {"command": "session_inspect"}],
         "notes": [
             "Pass --session ID to select a draft.",
             "Command arrays stop at the first failure and keep earlier edits.",
             "Publish checks the saved draft against the current asset revision.",
-            "See the Audio Workbench README for command examples and processing options."
+            "See the atk-audio README for command examples and processing options."
         ]
     })
 }

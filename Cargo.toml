@@ -1,5 +1,5 @@
 [package]
-name = "audio-workshop"
+name = "atk-audio"
 version = "0.1.0"
 edition = "2024"
 autobins = false

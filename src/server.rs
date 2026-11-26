@@ -1,4 +1,4 @@
-use audio_workshop::{Result, VERSION, project::Project, viewer};
+use atk_audio::{Result, VERSION, project::Project, viewer};
 use std::env;
 use std::path::PathBuf;
 use std::process::ExitCode;

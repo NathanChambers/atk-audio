@@ -1,4 +1,4 @@
-# Audio Workbench
+# atk-audio
 
 - Keep the Cargo package responsible for the command interface, project validation, and all writes to `.audio/`.
 - Use `src/cli.rs` for JSON input, command dispatch, and output files. Keep project persistence and edit rules in the Rust library.

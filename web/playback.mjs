@@ -63,4 +63,4 @@ class PlaybackProcessor extends AudioWorkletProcessor {
     }
 }
 
-registerProcessor("audio-workbench", PlaybackProcessor);
+registerProcessor("atk-audio", PlaybackProcessor);

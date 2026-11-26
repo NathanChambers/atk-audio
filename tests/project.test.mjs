@@ -58,7 +58,7 @@ test("audio analysis measures pitch, onsets, modulation, stereo delay and impuls
 });
 
 test("session drafts, WAV imports, playback controls and publish conflicts", async () => {
-    const scratch = await mkdtemp(join(tmpdir(), "audio-workbench-"));
+    const scratch = await mkdtemp(join(tmpdir(), "atk-audio-"));
     const run = async (session, input, output) => {
         const args = ["--session", session, "--command", JSON.stringify(input)];
         if (output) args.push("--output", output);

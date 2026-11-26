@@ -1,4 +1,4 @@
-use audio_workshop::Result;
+use atk_audio::Result;
 use std::ffi::c_void;
 use std::ptr::{null, null_mut};
 use std::time::{Duration, Instant};
