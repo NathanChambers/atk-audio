@@ -19,6 +19,7 @@ let values = {};
 let context = null;
 let playback = null;
 let workspaces = [];
+let firstDiscovery = true;
 let workspaceIndex = 0;
 let playbackIndex = 0;
 let selectedPreset = null;
@@ -95,6 +96,10 @@ async function refreshWorkspaces(signal) {
         label: entry.name + " · Session · " + entry.id,
     }))];
     projectTag = snapshot.tag;
+    if (firstDiscovery) {
+        firstDiscovery = false;
+        if (!selection) openWorkspaces();
+    }
     if (element("workspace-picker").open) drawWorkspaces();
 }
 

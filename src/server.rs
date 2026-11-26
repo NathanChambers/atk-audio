@@ -14,6 +14,7 @@ fn main() -> ExitCode {
 }
 
 fn run() -> Result<()> {
+    let mut headless = false;
     let mut project = None;
     let mut port = None;
     let mut arguments = env::args_os().skip(1);
@@ -23,6 +24,7 @@ fn run() -> Result<()> {
                 let directory = arguments.next().ok_or("Missing project directory")?;
                 set_project(&mut project, directory.into())?;
             }
+            Some("--headless") => headless = true,
             Some("--port") => {
                 port = Some(
                     arguments
@@ -38,7 +40,7 @@ fn run() -> Result<()> {
             }
             Some("--help" | "-h") => {
                 println!(
-                    "atk-audio [--project DIR | DIR] [--port PORT]\nServes saved audio sessions and assets in a read-only browser viewer.\nThe directory defaults to the current working directory. Omit --port or pass 0 for an available port."
+                    "atk-audio [--project DIR | DIR] [--port PORT] [--headless]\nUse --headless to print the viewer URL without launching a browser.\nServes saved audio sessions and assets in a read-only browser viewer.\nThe directory defaults to the current working directory. Omit --port or pass 0 for an available port."
                 );
                 return Ok(());
             }
@@ -50,7 +52,7 @@ fn run() -> Result<()> {
     }
 
     let project = Project::new(project.unwrap_or_else(|| PathBuf::from(".")));
-    viewer::serve(&project, viewer::parse_port(port.as_deref())?)
+    viewer::serve_with_options(&project, viewer::parse_port(port.as_deref())?, headless)
 }
 
 fn set_project(project: &mut Option<PathBuf>, directory: PathBuf) -> Result<()> {

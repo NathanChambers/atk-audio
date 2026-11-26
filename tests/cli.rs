@@ -169,6 +169,7 @@ fn viewer_reads_snapshots_and_rejects_writes() {
     replies(project.command("draft", start, &[]));
     let mut viewer = Viewer(
         Command::new(env!("CARGO_BIN_EXE_atk-audio"))
+            .arg("--headless")
             .current_dir(project.0.parent().unwrap())
             .args(["--port", "0"])
             .arg(project.0.file_name().unwrap())
