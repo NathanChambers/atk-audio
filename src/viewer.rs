@@ -22,7 +22,7 @@ pub fn serve(project: &Project, port: u16) -> Result<()> {
     serve_with_options(project, port, true)
 }
 
-pub fn serve_with_options(project: &Project, port: u16, headless: bool) -> Result<()> {
+pub fn serve_with_options(project: &Project, port: u16, _headless: bool) -> Result<()> {
     let listener = TcpListener::bind(("127.0.0.1", port))?;
     let (event_streams, pending) = mpsc::sync_channel(16);
     let watched_project = Project::new(project.root.clone());
@@ -30,21 +30,6 @@ pub fn serve_with_options(project: &Project, port: u16, headless: bool) -> Resul
 
     let url = format!("http://{}", listener.local_addr()?);
     println!("atk-audio viewer: {url}");
-    if !headless {
-        #[cfg(target_os = "windows")]
-        let mut browser = {
-            let mut command = std::process::Command::new("rundll32.exe");
-            command.arg("url.dll,FileProtocolHandler");
-            command
-        };
-        #[cfg(target_os = "macos")]
-        let mut browser = std::process::Command::new("open");
-        #[cfg(not(any(target_os = "windows", target_os = "macos")))]
-        let mut browser = std::process::Command::new("xdg-open");
-        if let Err(error) = browser.arg(&url).spawn() {
-            eprintln!("Could not launch browser ({error}). Open {url} to view projects.");
-        }
-    }
     for stream in listener.incoming() {
         let Ok(stream) = stream else { continue };
         let _ = handle(stream, project, &event_streams);

@@ -123,6 +123,41 @@ fn native_cli_edits_renders_and_checks_publish_revisions() {
 }
 
 #[test]
+fn validation_suite_rejects_reruns_before_creating_a_draft() {
+    let project = TestProject::create();
+    let run = |session: &str| {
+        Command::new(env!("CARGO_BIN_EXE_atk-audio-cli"))
+            .current_dir(&project.0)
+            .args(["--session", session, "--validation-suite"])
+            .output()
+            .unwrap()
+    };
+    let initial = replies(run("examples"));
+    assert_eq!(initial.last().unwrap()["result"]["revision"], 1);
+
+    let state = project.0.join(".audio");
+    let asset = state.join("assets/audio-validation-suite.json");
+    let draft = state.join("sessions/examples.json");
+    let published = fs::read(&asset).unwrap();
+    let original = fs::read(&draft).unwrap();
+
+    for (session, expected) in [
+        ("examples", "Session already exists: examples"),
+        ("retry", "Validation suite asset already exists: audio-validation-suite"),
+    ] {
+        let rerun = run(session);
+        assert!(!rerun.status.success());
+        let failure: Value = serde_json::from_slice(&rerun.stdout).unwrap();
+        assert_eq!(failure["ok"], false);
+        assert!(failure["error"].as_str().unwrap().contains(expected));
+    }
+
+    assert_eq!(fs::read(asset).unwrap(), published);
+    assert_eq!(fs::read(draft).unwrap(), original);
+    assert_eq!(fs::read_dir(state.join("sessions")).unwrap().count(), 1);
+}
+
+#[test]
 fn melody_import_preserves_detected_notes_and_rests() {
     let project = TestProject::create();
     let steps = json!([

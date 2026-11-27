@@ -1,3 +1,4 @@
+mod build_identity;
 #[allow(dead_code)]
 mod mcp;
 
@@ -6,7 +7,7 @@ mod recording;
 #[cfg(windows)]
 mod loopback;
 
-use atk_audio::{Result, VERSION, audio, edits, project::Project, viewer};
+use atk_audio::{Result, audio, edits, project::Project, viewer};
 use serde_json::{Value, json};
 use std::env;
 use std::fs::{self, OpenOptions};
@@ -82,7 +83,7 @@ fn run() -> Result<()> {
         return Ok(());
     }
     if options.version {
-        println!("atk-audio-cli {VERSION}");
+        build_identity::print_version()?;
         return Ok(());
     }
 
@@ -140,22 +141,37 @@ fn run() -> Result<()> {
         _ if options.batch => return Err("Batch input must be a JSON array of 1..1024 commands".into()),
         command => vec![command],
     };
+
+    if options.validation {
+        let start = commands.first().filter(|command| command["command"] == "session_start");
+        let asset_id = start
+            .and_then(|command| command["asset"].as_str())
+            .ok_or("Expected the validation suite to start an asset")?;
+        return project.run_validation_suite(&options.session, asset_id, |project| {
+            run_commands(project, &options, &commands)
+        });
+    }
+
+    run_commands(&project, &options, &commands)
+}
+
+fn run_commands(project: &Project, options: &Options, commands: &[Value]) -> Result<()> {
     let mut recording = if options.debug {
         let directory = project.root.join(".audio").join("recordings");
-        let state = recorded_state(&project, &options.session, &Value::Null);
+        let state = recorded_state(project, &options.session, &Value::Null);
         Some(recording::Recording::create(&directory, &options.session, state)?)
     } else {
         None
     };
     for command in commands {
         if let Some(recording) = &mut recording {
-            recording.begin(&command)?;
+            recording.begin(command)?;
         }
         let result = mcp::call_local(command.clone(), "batch", |name, arguments| {
-            mcp_execute(&project, &options, name, arguments)
+            mcp_execute(project, options, name, arguments)
         });
         if let Some(recording) = &mut recording {
-            let state = recorded_state(&project, &options.session, &command);
+            let state = recorded_state(project, &options.session, command);
             let reply = match &result {
                 Ok(reply) => reply.clone(),
                 Err(error) => json!({"ok": false, "error": error.to_string()}),

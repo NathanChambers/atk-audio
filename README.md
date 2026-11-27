@@ -26,7 +26,7 @@ Add the [`atk-audio` skill](.agents/skills/atk-audio/SKILL.md) using your agent'
 
 ## Open the viewer
 
-Run `atk-audio` from your project directory. Your browser opens a picker for saved assets and sessions. Choose one, then press **Play** to hear the arrangement and use **Solo** to audition individual tracks. Pass `--headless` to open the printed URL manually.
+Run `atk-audio` from your project directory. Open the printed URL to see a picker for saved assets and sessions. Choose one, then press **Play** to hear the arrangement and use **Solo** to audition individual tracks.
 
 ## Learn more
 

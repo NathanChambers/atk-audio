@@ -86,6 +86,8 @@ atk-audio-cli --session audio-validation-suite --validation-suite
 
 The command creates and publishes **Audio Validation Suite** using the standard commands defined in [validation-suite.json](../src/fixtures/validation-suite.json). It lays out 11 synthesized references as separate tracks. Play them in order or use Solo to isolate a track.
 
+If the selected session or the published `audio-validation-suite` asset already exists, the command reports the collision before creating a draft. Open the existing suite in the viewer or choose a different project to build it again.
+
 | Category | Tracks and start times |
 | --- | --- |
 | Tonal | Sine wave (0 s), bell (2 s), plucked string (6 s) |

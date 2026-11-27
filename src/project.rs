@@ -7,11 +7,28 @@ use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 pub struct Project {
     pub root: PathBuf,
+    write_lock: Option<ProjectLock>,
 }
 
 impl Project {
     pub fn new(root: PathBuf) -> Self {
-        Self { root }
+        Self { root, write_lock: None }
+    }
+
+    pub fn run_validation_suite(&self, session_id: &str, asset_id: &str, run: impl FnOnce(&Self) -> Result<()>) -> Result<()> {
+        let session_path = self.document_path("sessions", session_id)?;
+        let asset_path = self.document_path("assets", asset_id)?;
+        let lock = self.lock()?;
+        if session_path.try_exists()? {
+            return Err(format!("Session already exists: {session_id}").into());
+        }
+
+        if asset_path.try_exists()? {
+            return Err(format!("Validation suite asset already exists: {asset_id}. Open the existing asset or run the suite in another project").into());
+        }
+
+        let project = Self { root: self.root.clone(), write_lock: Some(lock) };
+        run(&project)
     }
 
     fn directory(&self, kind: &str) -> PathBuf {
@@ -77,7 +94,11 @@ impl Project {
         edit: impl FnOnce(&mut Value) -> Result<Value>,
     ) -> Result<Value> {
         let path = self.document_path("sessions", session_id)?;
-        let _lock = self.lock()?;
+        let _lock = if self.write_lock.is_none() {
+            Some(self.lock()?)
+        } else {
+            None
+        };
         match command["command"].as_str() {
             Some("session_start") => self.start(&path, session_id, command),
             Some("session_publish") => self.publish(&path, session_id),
