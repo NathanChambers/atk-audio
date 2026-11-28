@@ -20,6 +20,8 @@ Run `atk-audio` from your project directory and open the viewer URL printed at s
 
 `atk-audio` reads saved sessions and assets from the current directory. To view another directory, run `atk-audio "D:\Game Audio"` or pass the same path with `--project`. Use `--port PORT` to change the port. The viewer's playback controls are local to the browser. Make project edits with `atk-audio-cli`. The existing `atk-audio-cli --serve` command also starts the Rust viewer.
 
+The viewer listens on loopback by default. Pass `--lan` to `atk-audio` or `atk-audio-cli --serve` to make the read-only viewer available over IPv4. Use `http://<host-LAN-IP>:<port>` on another device on your trusted local network. The port is printed at startup. Auditioning through AudioWorklet requires a secure browser context, such as the printed loopback URL on the host or a trusted HTTPS origin.
+
 ## Agent workflow
 
 Choose a distinct session ID for each agent. Start from an asset ID to get its current published revision or create a new draft. Pass JSON via stdin or use a JSON file with **--file**. Each command returns a JSON line. Arrays execute in order, and a failure stops the batch with earlier successful commands saved.

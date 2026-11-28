@@ -17,7 +17,8 @@ use std::process::ExitCode;
 
 const HELP: &str = "atk-audio-cli [--project DIR] [--session NAME] [--batch] [--file FILE | --input FILE | --command JSON] [--output FILE]\n\
 atk-audio-cli --project DIR --session audio-validation-suite --validation-suite\n\
-atk-audio [--project DIR | DIR] [--port 7880]\n\
+atk-audio [--project DIR | DIR] [--port 7880] [--lan]\n\
+atk-audio-cli --serve [--project DIR] [--port PORT] [--lan]\n\
 Commands can also be piped as JSON. Submit a command array to run commands in order.\n\
 Use --mcp to serve MCP over stdio or --commands for machine-readable help.\n\
 Use --batch to require an array. Send {\"command\":\"help\"} for command discovery.\n\
@@ -35,6 +36,7 @@ struct Options {
     port: Option<String>,
     validation: bool,
     serve: bool,
+    lan: bool,
     help: bool,
     version: bool,
     batch: bool,
@@ -92,6 +94,10 @@ fn run() -> Result<()> {
         return Ok(());
     }
 
+    if options.lan && (!options.serve || options.mcp) {
+        return Err("--lan requires --serve in atk-audio-cli".into());
+    }
+
     if options.mcp {
         options.project = fs::canonicalize(&options.project)?;
         env::set_current_dir(&options.project)?;
@@ -105,7 +111,8 @@ fn run() -> Result<()> {
         if options.debug {
             return Err("Use --debug with commands, not with --serve".into());
         }
-        return viewer::serve(&project, viewer::parse_port(options.port.as_deref())?);
+        let port = viewer::parse_port(options.port.as_deref())?;
+        return viewer::serve_with_lan(&project, port, options.lan);
     }
 
     let input = if options.validation {
@@ -240,6 +247,7 @@ fn parse_options() -> Result<Options> {
             }
             "--validation-suite" if inline.is_none() => options.validation = true,
             "--serve" if inline.is_none() => options.serve = true,
+            "--lan" if inline.is_none() => options.lan = true,
             "--batch" if inline.is_none() => options.batch = true,
             "--debug" if inline.is_none() => options.debug = true,
             "--mcp" if inline.is_none() => options.mcp = true,
@@ -261,9 +269,15 @@ fn decode_commands(bytes: &[u8]) -> Result<Value> {
 fn execute_with_receipt(
     project: &Project,
     options: &Options,
-    command: &Value,
+    mut command: Value,
 ) -> Result<Value> {
-    let mut reply = execute(project, options, command)?;
+    let arguments = command.as_object_mut().ok_or("Expected a JSON command")?;
+    let mut options = options.clone();
+    if let Some(path) = arguments.remove("output_path") {
+        options.output = Some(PathBuf::from(path.as_str().ok_or("output_path must be a string")?));
+    }
+
+    let mut reply = execute(project, &options, &command)?;
     if let Some(path) = reply["output"].as_str() {
         let receipt = json!({"path": fs::canonicalize(path)?, "bytes": fs::metadata(path)?.len()});
         let mut result = reply.as_object().expect("command response object").clone();
@@ -340,15 +354,12 @@ fn mcp_execute(project: &Project, options: &Options, name: &str, arguments: &Val
     if name == "batch" {
         let commands = mcp::batch_commands(arguments)?;
         return Ok(mcp::run_batch(commands, |command| {
-            execute_with_receipt(project, options, command).map_err(|error| error.to_string())
+            execute_with_receipt(project, options, command.clone()).map_err(|error| error.to_string())
         }));
     }
-    let mut request = mcp::native_command(name, arguments)?;
-    let mut options = options.clone();
-    if let Some(path) = request.as_object_mut().unwrap().remove("output_path") {
-        options.output = Some(PathBuf::from(path.as_str().ok_or("output_path must be a string")?));
-    }
-    execute_with_receipt(project, &options, &request).map_err(|error| error.to_string())
+
+    let request = mcp::native_command(name, arguments)?;
+    execute_with_receipt(project, options, request).map_err(|error| error.to_string())
 }
 
 fn command_help() -> Value {

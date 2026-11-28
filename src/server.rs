@@ -17,6 +17,7 @@ fn main() -> ExitCode {
 fn run() -> Result<()> {
     let mut project = None;
     let mut port = None;
+    let mut lan = false;
     let mut arguments = env::args_os().skip(1);
     while let Some(argument) = arguments.next() {
         match argument.to_str() {
@@ -24,7 +25,8 @@ fn run() -> Result<()> {
                 let directory = arguments.next().ok_or("Missing project directory")?;
                 set_project(&mut project, directory.into())?;
             }
-            Some("--headless") => {},
+            Some("--headless") => {}
+            Some("--lan") => lan = true,
             Some("--port") => {
                 port = Some(
                     arguments
@@ -40,7 +42,7 @@ fn run() -> Result<()> {
             }
             Some("--help" | "-h") => {
                 println!(
-                    "atk-audio [--project DIR | DIR] [--port PORT] [--headless]\nThe viewer prints its URL on startup. --headless is accepted for compatibility.\nServes saved audio sessions and assets in a read-only browser viewer.\nThe directory defaults to the current working directory. Omit --port or pass 0 for an available port. Use --version or -V for build identity."
+                    "atk-audio [--project DIR | DIR] [--port PORT] [--headless] [--lan]\nUse --lan to allow IPv4 access from other devices on your local network.\nThe viewer prints its URL on startup. --headless is accepted for compatibility.\nServes saved audio sessions and assets in a read-only browser viewer.\nThe directory defaults to the current working directory. Omit --port or pass 0 for an available port. Use --version or -V for build identity."
                 );
                 return Ok(());
             }
@@ -52,7 +54,8 @@ fn run() -> Result<()> {
     }
 
     let project = Project::new(project.unwrap_or_else(|| PathBuf::from(".")));
-    viewer::serve(&project, viewer::parse_port(port.as_deref())?)
+    let port = viewer::parse_port(port.as_deref())?;
+    viewer::serve_with_lan(&project, port, lan)
 }
 
 fn set_project(project: &mut Option<PathBuf>, directory: PathBuf) -> Result<()> {

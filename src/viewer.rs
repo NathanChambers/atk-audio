@@ -5,7 +5,7 @@ use std::ffi::OsString;
 use std::fs;
 use std::hash::{DefaultHasher, Hash, Hasher};
 use std::io::{self, BufRead, BufReader, Read, Write};
-use std::net::{TcpListener, TcpStream};
+use std::net::{Ipv4Addr, TcpListener, TcpStream};
 use std::sync::mpsc::{self, Receiver, RecvTimeoutError, SyncSender};
 use std::thread;
 use std::time::{Duration, Instant, SystemTime};
@@ -23,13 +23,25 @@ pub fn serve(project: &Project, port: u16) -> Result<()> {
 }
 
 pub fn serve_with_options(project: &Project, port: u16, _headless: bool) -> Result<()> {
-    let listener = TcpListener::bind(("127.0.0.1", port))?;
+    serve_with_lan(project, port, false)
+}
+
+pub fn serve_with_lan(project: &Project, port: u16, lan: bool) -> Result<()> {
+    let host = if lan {
+        Ipv4Addr::UNSPECIFIED
+    } else {
+        Ipv4Addr::LOCALHOST
+    };
+    let listener = TcpListener::bind((host, port))?;
     let (event_streams, pending) = mpsc::sync_channel(16);
     let watched_project = Project::new(project.root.clone());
     thread::spawn(move || stream_changes(&watched_project, pending));
 
-    let url = format!("http://{}", listener.local_addr()?);
-    println!("atk-audio viewer: {url}");
+    let port = listener.local_addr()?.port();
+    println!("atk-audio viewer: http://127.0.0.1:{port}");
+    if lan {
+        eprintln!("LAN access: open http://<host-LAN-IP>:{port} from another device.");
+    }
     for stream in listener.incoming() {
         let Ok(stream) = stream else { continue };
         let _ = handle(stream, project, &event_streams);

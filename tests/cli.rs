@@ -123,6 +123,70 @@ fn native_cli_edits_renders_and_checks_publish_revisions() {
 }
 
 #[test]
+fn mcp_batch_exports_each_render_to_its_own_path() {
+    let project = TestProject::create();
+    let setup = json!([
+        {"command": "session_start", "asset": "cues"},
+        {"command": "source_generate", "id": "tone", "seconds": 0.5},
+        {"command": "track_add", "id": "lead"},
+        {"command": "clip_add", "id": "hit", "track": "lead", "source": "tone"},
+        {"command": "preset_set", "id": "alert", "seconds": 0.5},
+        {"command": "preset_set", "id": "acknowledged", "seconds": 0.25}
+    ]);
+    replies(project.command("draft", setup, &[]));
+    let draft_path = project.0.join(".audio/sessions/draft.json");
+    let original_draft = fs::read(&draft_path).unwrap();
+
+    let mut server = Command::new(env!("CARGO_BIN_EXE_atk-audio-cli"))
+        .current_dir(&project.0)
+        .args(["--session", "draft", "--mcp"])
+        .stdin(Stdio::piped())
+        .stdout(Stdio::piped())
+        .spawn()
+        .unwrap();
+    let mut input = server.stdin.take().unwrap();
+    for (index, (name, arguments)) in [
+        ("session_render", json!({"preset":"alert","output_path":"direct.wav"})),
+        ("batch", json!({"commands":[
+            {"command":"session_render","preset":"alert","output_path":"alert.wav"},
+            {"command":"session_render","preset":"acknowledged","output_path":"acknowledged.wav"}
+        ]})),
+        ("batch", json!({"commands":[
+            {"command":"session_render","preset":"alert","output_path":"before-failure.wav"},
+            {"command":"session_render","preset":"acknowledged","output_path":42},
+            {"command":"session_render","preset":"alert","output_path":"after-failure.wav"}
+        ]})),
+    ].into_iter().enumerate() {
+        let request = json!({"jsonrpc":"2.0","id":index,"method":"tools/call","params":{"name":name,"arguments":arguments}});
+        writeln!(input, "{request}").unwrap();
+    }
+    drop(input);
+
+    let responses = replies(server.wait_with_output().unwrap());
+    assert_eq!(responses.len(), 3);
+    let direct = &responses[0]["result"]["structuredContent"];
+    let batch = &responses[1]["result"]["structuredContent"];
+    assert_eq!(direct["ok"], true);
+    assert_eq!(batch["ok"], true);
+    let read = |path| fs::read(project.0.join(path)).unwrap();
+    let alert = read("alert.wav");
+    let acknowledged = read("acknowledged.wav");
+    assert_eq!(batch["replies"][0]["written"]["bytes"], alert.len());
+    assert_eq!(batch["replies"][1]["written"]["bytes"], acknowledged.len());
+    assert_eq!(alert, read("direct.wav"));
+    assert_ne!(alert, acknowledged);
+
+    let failure = &responses[2]["result"]["structuredContent"];
+    assert_eq!(failure["ok"], false);
+    assert_eq!(failure["failed_command"], 2);
+    assert_eq!(failure["error"], "output_path must be a string");
+    assert_eq!(failure["replies"].as_array().unwrap().len(), 1);
+    assert_eq!(alert, read("before-failure.wav"));
+    assert!(!project.0.join("after-failure.wav").exists());
+    assert_eq!(fs::read(draft_path).unwrap(), original_draft);
+}
+
+#[test]
 fn validation_suite_rejects_reruns_before_creating_a_draft() {
     let project = TestProject::create();
     let run = |session: &str| {
